@@ -1,8 +1,8 @@
 FROM mysql:latest
 
-ADD ./products.csv /products.csv
-ADD ./users.csv /users.csv
-ADD ./setup.sql /docker-entrypoint-initdb.d/setup.sql
+COPY ./products.csv /products.csv
+COPY ./users.csv /users.csv
+COPY ./setup.sql /docker-entrypoint-initdb.d/setup.sql
 
 
 
