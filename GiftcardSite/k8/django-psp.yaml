@@ -1,6 +1,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
+  namespace: my-namespace
   name: unrestricted
 spec:
   privileged: false

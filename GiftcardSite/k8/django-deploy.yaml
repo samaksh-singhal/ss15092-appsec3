@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: my-namespace
   name: assignment3-django-deploy
   labels:
     app: assignment3-django-deploy

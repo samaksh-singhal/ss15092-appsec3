@@ -1,6 +1,7 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
+  namespace: my-namespace
   name: static-data-pv
   labels:
     type: local
