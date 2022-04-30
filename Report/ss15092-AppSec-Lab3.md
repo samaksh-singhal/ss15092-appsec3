@@ -1,16 +1,16 @@
 # Application Security Lab Assignment 3
 
 successful setup of the Lab environment in the Ubuntu Virtual machine provided with the lab material is demonstrated in the below screenshot.
-![](setup.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/setup.png)
 
 ## Part 1: Remediate Security Review Findings
-### Control 1
+### Control 1 - Minimize the admission of privileged containers
 
 #### Validate findings
 
 Using the *kubectl get psp* command, I listed all the Pod Security Policies (PSPs). There is only one PSP by the name *unrestricted* and the value of *securityContext.privileged* set as **True**. This validates the issue of admission of privileged container. Below is the screenshot demonstrating the issue.
 
-![](control1validate.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/control1validate.png)
 
 #### Remediate
 
@@ -18,15 +18,19 @@ As mentioned in the CIS benchmark for remidiation the Pod Security Policy (PSP) 
 
 As shown in the below screenshot *.spec.privileged* feild is set to *True*, which is the issue.
 
-![](Old_PSP.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/Old_PSP.png)
 
 We now update the PSP *.spec.privileged* feild and set it to *False*
 
-![](Updated_PSP.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/Updated_PSP.png)
+
+Post updating the PSP we have rebuild the kubernetes cluster for the changes to take effect.
 
 #### Verify finding resolution
 
-![](RemVal1.png))
+After performing the fix to the issue in the pod security policy we run the validation step again to check the output. This time no output is returned which satisfies the audit requirement as it is specifically mentioned in the CIS Benchmark that **either no output of false should be returned**. Hence the test is passed. Below screenshot signifies that issue of admission of privileged container is removed from the cluster.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/RemVal1.png))
 
 ### Control 2
 
