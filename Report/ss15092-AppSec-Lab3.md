@@ -281,7 +281,7 @@ To remidiate this vulnerability we create a new namespace using *kubectl create 
 
 Now to associate all the resources in the new namespace we just add my-namespace as value to the namespace feild in the metadata of all the yaml files in the application. For illustration please find below screenshot. Please note I have made changes to the namespace feild under metadata section in all the yaml file but showing the screenshot for all yaml file would be a waste of energy and space therefore only one screenshot was provided to signify correct understanding of the mitigation.
 
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/9/all%20yaml%20same%20change.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/9/all%20yaml%20same%20change.png)
 
 #### Verify finding resolution
 
@@ -289,7 +289,7 @@ To verify if our pods/resources are running in the newly created namespace we ru
 
 We now execute the same command as above but adding namespace flag *--namespace my-namespace* this should show all resources in new namespace, and successfully in the output we find all 3 pods in the new namespace. Hence out objective is achived and the audit finding is cleared.
 
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/9/rv.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/9/rv.png)
 
 ### Control 10 - Ensure that the seccomp profile is set to docker/default in your pod definitions
 
@@ -297,11 +297,11 @@ We now execute the same command as above but adding namespace flag *--namespace 
 
 We check the deploy.yaml files in the web application code base, we found folowing 3 files which does not have seccomp profile in security context.
 1. **django-eploy.yaml**
-    [](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v1.png)
+    ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v1.png)
 2. **k8s/db-deployment.yaml**
-    [](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v2.png)
+    ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v2.png)
 3. **k8/db-deployment.yaml**
-    [](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v3.png)
+    ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/v3.png)
 
 Hence confirming the issue of seccomp profile is set to docker/default in your pod definitions.
 
@@ -309,16 +309,16 @@ Hence confirming the issue of seccomp profile is set to docker/default in your p
 
 We add the seccompProfile to the security context of all 3 files as shown in the below screenshots and restart the cluster for the changes to take effect.
 
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r1.png)
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r2.png)
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r3.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r1.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r2.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/r3.png)
 
 
 #### Verify finding resolution
 
 So after restarting the cluster the pods will only run if the seccomp profile is placed corectly in the files. As shown in the below screenshot the pods are creates successfully and are running in perfect condition. Hence the vulerability is removed and the audit test case is passed.
 
-[](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/rv1.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/rv1.png)
 
 
 ### Control 11
