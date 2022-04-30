@@ -1,0 +1,19 @@
+
+
+mysql --host=10.108.74.191 --port=3306 --user=root --password=thisisatestthing. GiftcardSiteDB -e "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';" -e "SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');"
+
+
+
+10.108.74.191    <none>        3306/TCP        
+
+2.7 and 4.2 automate
+
+
+for 4.2
+
+SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');
+
+for 2.7
+
+SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';
+
