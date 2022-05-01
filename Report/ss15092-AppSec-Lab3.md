@@ -566,3 +566,39 @@ The output shows that there is only one database base in the pod which is produc
 Below screenshot is a proof that control is a pass.
 
 ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/20/1.png)
+
+
+## Part 2:
+
+In oder to automate the Validation of security controls I have created a cron job which will run on hourly basis and put output of commands used in verifying the control in control 18 and 20.
+
+Since both the control are MySQL related, my commands will run on the MySQL pod. Therefore using command *kubectl get services --namespace my-namespace* i list down all sevices and note down the IP and port of MySQL server for it to be specified in my cronjob code for execution of the queries. output to note **10.108.74.191    <none>        3306/TCP **. The below screenshot shows the steps followed for identifying the IP and port.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/p2/1.png)
+
+My SQL validation commands are noted from the CIS benchmark for both the control:
+1. **Control 18 - Ensure 'password_lifetime' is Less Than or Equal to '365'** - command is *SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';*
+2. **Control 20 - Ensure Example or Test Databases are Not Installed on Production Servers** - *SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');*
+
+Now we create a cronjob stored as **job.yaml** in the repo at *AppSec3/db/k8*. We put the cronjob in the same namespace as our MySQL server so that it access the database pod for running querry. **schedule: "0 * * * *"** signifies that the job will run on an horly basis. 
+
+We prepare a consolidated command on the basis of information gathered through steps mentioned above:
+
+***mysql --host=10.108.74.191 --port=3306 --user=root --password=thisisatestthing. GiftcardSiteDB -e "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';" -e "SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');"***
+
+Also we dont provide MySQL password in hardcode here but refer the secrets file created in this assignment.
+
+The final **job.yaml** code can be seen in the below screenshot.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/p2/2.png)
+
+
+Now we execute the cron job and restart the cluster and check if appears in our namespace using command *kubectl get cronjob part2-job --namespace my-namespace*. The output shows our job running by name part2-job scheduled hourly. We now know that our cronjob is running we wait for the next hour!
+
+Now to see if our cronjob successfully executes SQL commands and output results in the logs we need to see the job pod in who's log out result will appear. Hence we run command *kubectl get pods --namespace my-namnespace* which give result of all pods in the namespace and not surprisingly we see 4 pods as compared to usual 3. Added pod is our cronjob pod.
+
+To check logs on the cronjob pod we run the following command *kubectl logs part2-job-27519780 --namespace --my-namespace*. Hola! we can see the correct output of the MySQL query which is required to validate control 18 and 20.
+Below screenshot proves successful execution of the cronjob query and output being stored in pod logs. Hence we have automated the validation step for control 18 and 20.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/p2/Screenshot%202022-04-28%20at%2019.05.17.png)
+
