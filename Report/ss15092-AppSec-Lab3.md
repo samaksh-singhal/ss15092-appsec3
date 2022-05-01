@@ -321,13 +321,248 @@ So after restarting the cluster the pods will only run if the seccomp profile is
 ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/10/rv1.png)
 
 
-### Control 11
+### Control 11 - Ensure that a user for the container has been created
 
 #### Validate findings
 
+As mentioned in the CIS benchmark we first run the provided command *docker ps --quiet | xargs --max-args=1 -I{} docker exec {} cat /proc/1/status | grep '^Uid:' | awk '{print $3}'*. This command returns the effective UID for each container.
+The below screenshot shows that the user in our container is running as root as the output to the command is 0. Hence the audit finding is validated
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/control11validate.png)
 
 #### Remediate
+
+To remediate the audit finding we fist create user **nginx** in our proxy docker file. Please find screenshot containing the updated dockerfile.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/11/r1.png)
+
+In the main docker file we created a user *django-app* and uncommented adduser code statements already provided in the codebase and also using chmod we restrict permission for the new user.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/11/r2.png)
+
+I have restarted the cluster for changes to take effect
 
 
 #### Verify finding resolution
 
+In order to validate and confirm if the my updates will come in effect and mitigate the vulnerability, I run the command mentioned in validate section again. Below is the screenshot as proof. As we can note that the output is not zero that means that the user is not root any more. Hence we can say that vulnerability is mitigated.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/11/rv1.png)
+
+### Control 12 - Ensure that containers use only trusted base images
+
+#### Validate findings
+
+Please note for this finding it is mentioned that it is already cleared and no vulnetrability exist related to this point. But to verify we will check for fake docker images by runninng commands mentioned in the audit section of the CIS Benchmark. Below is the screenshot for the same.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/12/1.png)
+
+#### Remediate
+
+No remidiation is required as docker images are based on another established and trusted base image downloaded over a secure channel. This can be seen in the screenshot below.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/12/1.png)
+
+#### Verify finding resolution
+
+No remidiation was done and hence no verification of reolution is required as docker images are based on another established and trusted base image downloaded over a secure channel. This can be seen in the screenshot below.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/12/1.png)
+
+## Control 13 - Ensure that unnecessary packages are not installed in the container
+
+#### Validate findings
+
+Post running the command *docker exec $INSTANCE_ID rpm -qa* we have compared packages called in the docker file. We found that packages like **openjdk11 , alpinelinux** were unnecesary packages in the cluster.
+Below screenshot shows the docker file where unnecessary packages are called.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/13/v.png)
+
+#### Remediate
+
+In order to mitigate the vulnerability we just comment out all the code statements in dockerfile where unnecessary packages are being called. Below screenshot shows changes in the code base.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/13/r.png)
+
+#### Verify finding resolution
+
+We restart the cluster to ensure that the changes in the cluster are taken into effect. Our cluster starts perfectly thus signifing that the commented line of code calling unnecessary packages are indeed useless. Please see below screenshot signifying that the cluster works perfectly.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/13/rv.png)
+
+## Control 14 - Ensure that COPY is used instead of ADD in Dockerfiles
+
+#### Validate findings
+
+As mentioned in the the CIS benchmark we look into all dockerfiles for ADD statements, we found sevreal ADD statements in dockerfiles. Hence confirming the presence of vulnerability. Below are the screenshot for proof
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/v1.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/v2.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/v3.png)
+
+#### Remediate
+
+To remediate we replace the ADD statement in dockerfiles with COPY instructions. Below is the screenshot for showing the changes we made to docker file
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/r1.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/r2.png)
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/v3.png)
+
+#### Verify finding resolution
+
+After making changes to the code base we will restart the cluster and if cluster starts ok then it signifies that vulnerability is removed without impacting the application. Below is the screenshot showing that the cluster starts perfectly fine and hence the vulnerabiltiy is mitigated
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/14/rv.png)
+
+## Control 15 - Ensure secrets are not stored in Dockerfiles
+
+#### Validate findings
+
+This finding is very simillar to control 8 and i have mitigated this vulnerability in control itself. I will use the data and instructions from there.
+
+In **DB's Dockerfile** - MySQL root password was hardcoded
+    ![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/8/v4.png)
+We also found that the file **django-admin-pass-secret.yaml** which should be containing all the secrets is not correctly built and a random user is existing hence this confirmed that issue of secrets being used as environment variables. Below is the screenshot as an evidence.
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/8/v5.png)
+
+#### Remediate
+
+In order to mitigate the vulnerability I rewrite application code to read secrets from mounted secret files, rather than from environment variables. Below is the screenshot of the secret file where i have made edits to include MySQL password (base64 encoded, this is required as if we just enter normal text value the application will throw error while compiling) and secret key from settings.py. Please note that the reference field with which the secrets will acessed across all the web application is login-secrets. Also note that secret file is marked as opaque which hides the file by default.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/8/r1.png)
+
+As a next step we remove the secret in docker file and refer the secrets file instead:
+
+**Dockerfile** - As seen in the screenshot in the validate finding section MySQL password is hardcoded,we just remove the environment variable. Below screenshot signifies the chages.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/8/r4.png)
+
+
+#### Verify finding resolution
+
+After making all the changes we restart the cluster and this is a test if we have done the refrencing corectly the web application will start perfectly otherwise the pods will not run. Below id the screenshot of pods running correctly after all the changes hence we have created the secret files correctly and referenced it perfectly for pods to fetch details from the secret file instead of the environment variables.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/8/rv1.png)
+
+## Control 16 - Use Dedicated Least Privileged Account for MySQL Daemon/Service
+
+#### Validate findings
+
+To validate this finding we loginto the MySQL container and run the audit command *ps -ef | egrep "^mysql.*$"*. Below is the screenshot showing the output of the command. As we see mysql user is returned and it is specefically written in the benchmark that in order to make this control fail no output should be returned. Hence this is a pass as specified in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/16/1.png)
+
+#### Remediate
+
+No remediation is required as the control is a pass.
+
+To validate this finding we loginto the MySQL container and run the audit command *ps -ef | egrep "^mysql.*$"*. Below is the screenshot showing the output of the command. As we see mysql user is returned and it is specefically written in the benchmark that in order to make this control fail no output should be returned. Hence this is a pass as specified in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/16/1.png)
+
+#### Verify finding resolution
+
+No remediation was implemented as the control is a pass.
+
+To validate this finding we loginto the MySQL container and run the audit command *ps -ef | egrep "^mysql.*$"*. Below is the screenshot showing the output of the command. As we see mysql user is returned and it is specefically written in the benchmark that in order to make this control fail no output should be returned. Hence this is a pass as specified in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/16/1.png)
+
+## Control 17 - Dedicate the Machine Running MySQL
+
+#### Validate findings
+
+To validate the fining we run *kubectl get pods* command to identify that our MySQL database is running in a seperate pod which is equivalent to a different machine in virtual environment. Hence this control is a pass as mentioned in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/17/1.png)
+
+#### Remediate
+
+No remediation required as the control is a pass.
+
+To validate the fining we run *kubectl get pods* command to identify that our MySQL database is running in a seperate pod which is equivalent to a different machine in virtual environment. Hence this control is a pass as mentioned in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/17/1.png)
+
+
+#### Verify finding resolution
+
+No remediation required as the control is a pass.
+
+To validate the fining we run *kubectl get pods* command to identify that our MySQL database is running in a seperate pod which is equivalent to a different machine in virtual environment. Hence this control is a pass as mentioned in the report.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/17/1.png)
+
+## Control 18 - Ensure 'password_lifetime' is Less Than or Equal to '365'
+
+#### Validate findings
+
+To validate the finding we loginto the MySQL pod as root user and execute the command given in CIS Benchmark *SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';*. The output of the command is **0**. A value of 0 implies the password never expires. Hence the control failed. The screenshot below shows as a proof.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/18/v.png)
+
+#### Remediate
+
+In the same root session as loggid into for validating the control we set value of default_password_lifetime varialbe as 365 using the comamnd *set persist default_password_lifetime = 365;*. Query is executed successfully hence the changes are success.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/18/r.png)
+
+#### Verify finding resolution
+
+To verify the remediation we run the audit command *SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME like 'default_password_lifetime';* again and the output shows that the variable default_password_lifetime varialbe is set to 365. Hence the vulnerability is removed and control is passed.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/18/rv.png)
+
+## Control 19 - Ensure Password Resets Require Strong Passwords 
+
+#### Validate findings
+
+To validate the finding we loginto the MySQL pod as root user and execute the command given in CIS Benchmark *SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME in ('password_history', 'password_reuse_interval');*. The output of the command is **0**. A value of 0 implies the password never expires. Hence the control failed. The screenshot below shows as a proof.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/19/v.png)
+
+#### Remediate
+
+In the same root session as loggid into for validating the control we set value of 'password_history', 'password_reuse_interval' varialbes as 5 and 365 respectively using the comamnd *set persist password_history = 5;*. Query is executed successfully hence the changes are success.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/19/r.png)
+
+
+#### Verify finding resolution
+
+To verify the remediation we run the audit command SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables where VARIABLE_NAME in ('password_history', 'password_reuse_interval');* again and the output shows that the variable default_password_lifetime varialbe is set to 5 and 365. Hence the vulnerability is removed and control is passed.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/19/rv.png)
+
+## Control 20 - Ensure Example or Test Databases are Not Installed on Production Servers
+
+#### Validate findings
+
+To validate the finding we loginto the MySQL pod as root user and execute the command given in CIS Benchmark *SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');*.
+
+The output shows that there is only one database base in the pod which is production database. Hence the control is a pass and it is wrongly mentioned as fail in the report.
+Below screenshot is a proof that control is a pass.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/20/1.png)
+
+#### Remediate
+
+No Remidiation required as the control is a pass.
+
+To validate the finding we loginto the MySQL pod as root user and execute the command given in CIS Benchmark *SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');*.
+
+The output shows that there is only one database base in the pod which is production database. Hence the control is a pass and it is wrongly mentioned as fail in the report.
+Below screenshot is a proof that control is a pass.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/20/1.png)
+
+#### Verify finding resolution
+
+No Remidiation required as the control is a pass.
+
+To validate the finding we loginto the MySQL pod as root user and execute the command given in CIS Benchmark *SELECT * FROM information_schema.SCHEMATA where SCHEMA_NAME not in ('mysql','information_schema', 'sys', 'performance_schema');*.
+
+The output shows that there is only one database base in the pod which is production database. Hence the control is a pass and it is wrongly mentioned as fail in the report.
+Below screenshot is a proof that control is a pass.
+
+![](https://github.com/samaksh-singhal/ss15092-appsec3/blob/main/Report/Artifact/20/1.png)
